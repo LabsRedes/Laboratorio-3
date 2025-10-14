@@ -15,8 +15,8 @@ int main(void) {
     struct sockaddr_in srv = {0};
     srv.sin_family = AF_INET;
     srv.sin_port = htons(PORT);
-    // CAMBIA ESTA IP SEGÚN DÓNDE CORRA EL BROKER (127.0.0.1 si es la misma máquina)
-    srv.sin_addr.s_addr = inet_addr("127.0.0.1");
+    
+    srv.sin_addr.s_addr = inet_addr("IP_BROKER");
 
     if (connect(sock, (struct sockaddr*)&srv, sizeof(srv)) < 0) { perror("connect"); exit(1); }
 
@@ -25,7 +25,6 @@ int main(void) {
     if (!fgets(topic, sizeof(topic), stdin)) return 0;
     topic[strcspn(topic, "\n")] = 0;
 
-    // Este publisher puede (opcionalmente) identificarse, pero en este diseño basta con enviar PUBLISH...
     char line[BUF_SIZE], out[BUF_SIZE];
     while (1) {
         printf("Mensaje (ej: Gol minuto 45) o SALIR: ");
