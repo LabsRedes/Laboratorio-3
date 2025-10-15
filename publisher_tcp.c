@@ -6,7 +6,7 @@
 #include <arpa/inet.h>
 
 //Definir el puerto donde está el broker y el tamaño del buffer s
-#define PORT 8080
+#define PORT 5927
 #define BUF_SIZE 2048
 
 int main(void) {

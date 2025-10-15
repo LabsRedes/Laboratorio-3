@@ -144,8 +144,59 @@ Al salir, el socket se cierra ordenadamente con close().
 ## broker_tcp.c
 - [Archivo Documentado](https://github.com/LabsRedes/Laboratorio-3/blob/main/broker_tcp.c) 
 
+El broker escucha en el **puerto 5927** y maneja múltiples clientes usando **select()**  y un arreglo fijo de conexiones.
+
+### Cómo funciona
+
+#### 1. Inicialización de estado
+Se limpia la tabla global de clientes y se definen constantes como:
+- PORT = 5927  
+- BUF_SIZE = 2048  
+- TOPIC_SIZE = 64  
+
+Se crean los conjuntos de descriptores:
+- fd_set allset (maestro)
+- fd_set rset (temporal)
+
+#### 2. Creación y preparación del socket de escucha
+- Se crea el socket TCP con socket(AF_INET, SOCK_STREAM, 0).  
+- Se habilita SO_REUSEADDR mediante setsockopt().  
+- Se configura la estructura sockaddr_in con INADDR_ANY y htons(PORT).  
+- Se asocia con bind() y se pone en escucha con listen().  
+- Se agrega el socket al conjunto maestro allset y se actualiza el maxfd.
+
+#### 3. Bucle principal con select()
+- Se copia allset en rset y se llama a select(maxfd + 1, &rset, NULL, NULL, NULL).  
+- Si el socket de escucha está listo, se acepta la nueva conexión con accept().  
+- El cliente se registra con su descriptor y se marca como ROLE_UNKNOWN hasta recibir un comando.
+
+
+#### 4. Lectura de datos de clientes
+- Para cada descriptor listo, se usa recv().  
+- Si devuelve 0 o error, se desconecta al cliente.  
+- Si llegan datos, se separan por líneas (strtok_r) y se procesan con handle_line().
+
+#### 5. Protocolo de texto
+- **SUBSCRIBE tema**  
+  Cambia el rol a suscriptor y guarda el tema.  
+  El broker responde: OK SUBSCRIBED tema.
+
+- **PUBLISH tema mensaje**  
+  El broker reenvía el mensaje a todos los suscriptores de ese tema.
+
+- **Comando desconocido**  
+  El broker responde: ERR Unknown command.
+
+#### 6. Difusión por tema
+broadcast_to_topic() recorre todos los clientes y envía el mensaje a quienes estén suscritos al tema indicado.
+
 
 
 # UDP
 
 # QUIC
+
+# Bibliografia:
+https://www.ibm.com/docs/es/i/7.6.0?topic=functions-strtok-r-tokenize-string-restartable
+
+https://www.geeksforgeeks.org/cpp/strtok-strtok_r-functions-c-examples/
