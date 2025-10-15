@@ -48,32 +48,32 @@ gcc subscriber_tcp.c -o subscriber_tcp
 
 # TCP
 
-## publisher_tcp.c
+## subscriber_tcp.c
 
-- [Archivo Documentado](https://github.com/LabsRedes/Laboratorio-3/blob/main/publisher_tcp.c) 
+- [Archivo Documentado](https://github.com/LabsRedes/Laboratorio-3/blob/main/subscriber_tcp.c) 
 
 
 #### Explicación
 
-Este programa implementa un cliente suscriptor TCP que se conecta a un broker para recibir mensajes de un tema específico.  
+Este programa implementa un cliente publicador TCP que se conecta a un broker para recibir mensajes de un tema específico.  
 
 
 #### Creación del socket
 
 Primero se crea un socket TCP usando IPv4 a través de <sys/socket.h>.  
-El socket se configura con la familia de direcciones `AF_INET` y el tipo `SOCK_STREAM`, que corresponde a una conexión TCP.  
+El socket se configura con la familia de direcciones AF_INET y el tipo SOCK_STREAM, que corresponde a una conexión TCP.  
 Si la creación falla, el programa muestra un error y termina.
 
 
 #### Conexión al broker
-Se prepara una estructura `sockaddr_in` que contiene la dirección IP y el puerto del broker.  
-Luego, el cliente intenta conectarse mediante la función `connect`, lo que inicia el handshake TCP con el broker.  
+Se prepara una estructura sockaddr_in que contiene la dirección IP y el puerto del broker.  
+Luego, el cliente intenta conectarse mediante la función connect, lo que inicia el handshake TCP con el broker.  
 Si la conexión es rechazada o falla, se muestra el mensaje de error correspondiente.
 
 
 #### Suscripción a un tema
 El usuario ingresa el nombre del tema al que desea suscribirse.  
-El programa construye un mensaje en el formato `SUBSCRIBE <tema>` y lo envía al broker a través del socket.  
+El programa construye un mensaje en el formato SUBSCRIBE tema y lo envía al broker a través del socket.  
 Si el envío falla, se imprime un error y el programa termina.
 
 
@@ -94,11 +94,55 @@ Al finalizar la comunicación, el socket se cierra correctamente y el programa t
 - Finaliza cuando el broker cierra la conexión o hay un error.  
 
 
-## subscriber_tcp.c
+## publisher_tcp.c
 - [Archivo Documentado](https://github.com/LabsRedes/Laboratorio-3/blob/main/publisher_tcp.c) 
 
+
+#### Explicación
+
+Este programa implementa un cliente suscriptor TCP que se conecta a un broker para recibir mensajes de un tema específico.  
+
+
+#### Creación del socket
+
+Primero se crea un socket TCP usando IPv4 a través de <sys/socket.h>.  
+El socket se configura con la familia de direcciones AF_INET y el tipo SOCK_STREAM, que corresponde a una conexión TCP.  
+Si la creación falla, el programa muestra un error y termina.
+
+
+#### Conexión al broker
+Se prepara una estructura sockaddr_in que contiene la dirección IP y el puerto del broker.  
+Luego, el cliente intenta conectarse mediante la función connect, lo que inicia el handshake TCP con el broker.  
+Si la conexión es rechazada o falla, se muestra el mensaje de error correspondiente.
+
+
+### Publicación en un tema
+
+El usuario ingresa el nombre del tema (por ejemplo, EquipoAvsB).
+Luego, puede escribir mensajes asociados a ese tema, como "Gol minuto 45".
+Cada mensaje se envía al broker en el formato:
+```
+PUBLISH <tema> <mensaje>
+```
+
+El envío se realiza mediante la función send().
+Si ocurre un error al enviar, el programa lo reporta y finaliza la conexión.
+
+### Finalización
+
+El usuario puede escribir SALIR para terminar el programa.
+Al salir, el socket se cierra ordenadamente con close().
+
+
+#### Resumen general
+- Crea un socket TCP y se conecta al broker.  
+- Publica un tema.
+- Permanece recibiendo entradas del usuario sobre el tema ingresado.
+- Finaliza cuando el broker cierra la conexión o hay un error. (SALIR)
+
+
 ## broker_tcp.c
-- [Archivo Documentado](https://github.com/LabsRedes/Laboratorio-3/blob/main/publisher_tcp.c) 
+- [Archivo Documentado](https://github.com/LabsRedes/Laboratorio-3/blob/main/broker_tcp.c) 
 
 
 
