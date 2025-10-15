@@ -190,9 +190,205 @@ Se crean los conjuntos de descriptores:
 #### 6. Difusión por tema
 broadcast_to_topic() recorre todos los clientes y envía el mensaje a quienes estén suscritos al tema indicado.
 
-
-
 # UDP
+
+## publisher_udp.c
+- [Archivo Documentado](https://github.com/LabsRedes/Laboratorio-3/blob/main/publisher_udp.c) 
+
+Este programa implementa un **publicador UDP** que envía mensajes a un servidor o broker (por ejemplo, un sistema de suscripción tipo pub/sub).  
+Cada mensaje enviado incluye un **tema (topic)** y un **contenido (mensaje)**.  
+El programa corre en modo interactivo desde consola, pidiendo al usuario el tema y luego los mensajes a publicar.
+
+Está diseñado para conectarse a un broker UDP en el puerto 5926, con dirección IP 127.0.0.1.
+
+
+### Cómo funciona
+
+#### 1. Inicialización
+Se definen constantes:
+- BUFFER_SIZE = 1024  
+- PORT = 5926  
+
+Se declaran buffers:
+- topic (50 caracteres)  
+- message (512 caracteres)  
+- buffer (para concatenar comando completo a enviar)
+
+
+#### 2. Creación del socket
+Se crea un socket UDP mediante la llamada socket(AF_INET, SOCK_DGRAM, 0).  
+Si falla, se muestra un mensaje de error con perror() y se termina la ejecución.
+
+#### 3. Configuración del destino
+Se configura la estructura sockaddr_in con:
+- sin_family = AF_INET  
+- sin_port = htons(PORT)  
+- sin_addr.s_addr = inet_addr("127.0.0.1")  
+
+Esto apunta al servidor UDP local que recibe las publicaciones.
+
+
+#### 4. Entrada de datos del usuario
+El programa solicita al usuario:
+
+1. Tema del partido o evento (por ejemplo: EquipoAvsB).  
+2. Luego, en un bucle infinito, pide:
+   - Un mensaje (por ejemplo: Gol minuto 45).  
+   - El mensaje se empaqueta con el formato PUBLISH tema mensaje.
+
+#### 5. Envío de datos
+El comando formateado se envía al broker mediante la función sendto().  
+Ejemplo de paquete enviado:
+
+PUBLISH EquipoAvsB Gol minuto 45
+
+El envío se repite indefinidamente hasta que el usuario escriba SALIR, lo que rompe el bucle y cierra el socket.
+
+#### 6. Finalización
+Cuando el usuario escribe SALIR, el programa sale del bucle principal.  
+Se llama a close(sockfd) para liberar el descriptor de socket antes de finalizar.
+
+## subscriber_udp.c
+- [Archivo Documentado](https://github.com/LabsRedes/Laboratorio-3/blob/main/subscriber_udp.c) 
+
+### Explicación
+
+Este programa implementa un **suscriptor UDP** que se conecta a un broker o servidor de mensajes y **escucha las publicaciones** enviadas en un tema específico.  
+Utiliza el puerto **5926** y permite al usuario ingresar el **nombre del tema (topic)** al cual desea suscribirse.
+
+Una vez suscrito, el programa entra en un bucle infinito que recibe y muestra todos los mensajes publicados en ese tema.
+
+
+### Cómo funciona
+
+#### 1. Inicialización
+Se definen las constantes:
+- BUFFER_SIZE = 1024  
+- PORT = 5926  
+
+Se declaran las estructuras:
+- sockaddr_in server_addr (dirección del broker o servidor UDP)  
+- sockaddr_in local_addr (dirección local del suscriptor)  
+- buffer (para almacenar mensajes)  
+- topic (para guardar el nombre del tema)
+
+
+#### 2. Creación del socket
+Se crea un socket **UDP** mediante la llamada socket(AF_INET, SOCK_DGRAM, 0).  
+Si la creación falla, se muestra un mensaje de error y el programa termina.
+
+#### 3. Configuración de la dirección local
+- local_addr.sin_family = AF_INET
+- local_addr.sin_port = htons(0) → asigna **un puerto aleatorio disponible**  
+- local_addr.sin_addr.s_addr = INADDR_ANY → escucha en cualquier interfaz de red disponible  
+- Se asocia con bind() para poder recibir mensajes.
+
+
+#### 4. Configuración de la dirección del broker
+- server_addr.sin_family = AF_INET
+- server_addr.sin_port = htons(PORT)
+- server_addr.sin_addr.s_addr = inet_addr("IP_BROKER")
+
+Aquí, "IP_BROKER" debe reemplazarse por la dirección IP del servidor o broker UDP al que el suscriptor desea conectarse.
+
+
+#### 5. Suscripción a un tema
+El programa pide al usuario que ingrese un tema (por ejemplo: EquipoAvsB).  
+Luego construye un mensaje con el formato:
+
+SUBSCRIBE tema
+
+Y lo envía al broker mediante la función sendto().  
+Ejemplo de mensaje enviado:
+
+SUBSCRIBE BocaVsRiver
+
+El servidor usa este dato para registrar al suscriptor en el tema indicado.
+
+#### 6. Recepción de mensajes
+Una vez suscrito, el programa imprime en pantalla:
+
+Suscrito al tema: BocaVsRiver  
+Esperando mensajes...
+
+Luego entra en un bucle infinito para estar atento a recibir los mensajes que distribuya el broker.
+
+## broker_udp.c
+
+### Descripción breve
+
+Este programa implementa un **broker UDP** que actúa como intermediario entre **publicadores (publishers)** y **suscriptores (subscribers)**.  
+Su función principal es recibir comandos por UDP y distribuir mensajes a los suscriptores correspondientes según el tema (topic).
+
+El sistema soporta hasta **15 suscriptores simultáneos** y usa el puerto **5926**.
+
+
+### Cómo funciona
+
+#### 1. Inicialización
+Se definen las constantes:
+- MAX_CLIENTS = 15  
+- BUFFER_SIZE = 1024  
+- PORT = 5926  
+
+Se declara una estructura para los suscriptores:
+
+- **Subscriber**
+  - addr: dirección del cliente (estructura sockaddr_in)
+  - addr_len: tamaño de la dirección
+  - topic: tema al que el cliente está suscrito  
+
+
+#### 2. Creación del socket y configuración del servidor
+- Se crea un socket UDP.
+- Se configura la dirección del servidor con:
+  - sin_family = AF_INET  
+  - sin_addr.s_addr = INADDR_ANY  
+  - sin_port = htons(PORT)  
+- Se asocia al puerto con bind() para empezar a escuchar mensajes UDP entrantes.  
+
+Si ocurre un error en socket() o bind(), el programa muestra un mensaje y termina.
+
+El broker queda activo mostrando:
+Broker UDP escuchando en puerto 5926...
+
+#### 3. Bucle principal (recepción de comandos)
+El programa entra en un bucle infinito para manejar mensajes entrantes:
+
+Cada datagrama recibido puede contener dos tipos de comandos:
+
+1. **SUBSCRIBE tema**  
+   - El broker extrae el nombre del tema con sscanf(buffer, "SUBSCRIBE %s", topic).  
+   - Llama a add_subscriber() para registrar al cliente junto con su dirección.  
+   - Si el límite de suscriptores se alcanza, se muestra un aviso en consola.
+
+2. **PUBLISH tema mensaje**  
+   - El broker extrae el tema y el contenido del mensaje con sscanf(buffer, "PUBLISH %s %[^\n]", topic, message).  
+   - Muestra el mensaje en pantalla:  
+     Mensaje recibido para tema: mensaje  
+   - Llama a distribute_message() para reenviar el mensaje a todos los suscriptores del mismo tema.
+
+
+#### 4. Registro de suscriptores
+La función add_subscriber() agrega un nuevo suscriptor al arreglo global si hay espacio disponible:
+
+void add_subscriber(struct sockaddr_in addr, socklen_t addr_len, char *topic)
+
+- Guarda la dirección IP y puerto del suscriptor.
+- Almacena el nombre del tema.  
+- Incrementa el contador global subscriber_count.  
+- Imprime un mensaje en consola.
+
+#### 5. Distribución de mensajes
+La función distribute_message() reenvía el contenido publicado a todos los suscriptores que estén registrados en el mismo tema.
+
+Por cada suscriptor en el arreglo:
+- Compara el tema recibido con el tema almacenado (strcmp(subscribers[i].topic, topic)).
+- Si coincide, envía el mensaje mediante sendto() al cliente correspondiente.
+
+#### 6. Finalización
+El broker no tiene condición de salida; se ejecuta indefinidamente.  
+Antes de salir, se cierra el socket con close(sockfd) para liberar los recursos.
 
 # QUIC
 

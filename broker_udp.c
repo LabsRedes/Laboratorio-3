@@ -4,9 +4,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#define MAX_CLIENTS 10
+#define MAX_CLIENTS 15
 #define BUFFER_SIZE 1024
-#define PORT 8080
+#define PORT 5926
 
 typedef struct {
     struct sockaddr_in addr;
