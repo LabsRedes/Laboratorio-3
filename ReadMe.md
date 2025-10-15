@@ -390,6 +390,58 @@ Por cada suscriptor en el arreglo:
 El broker no tiene condición de salida; se ejecuta indefinidamente.  
 Antes de salir, se cierra el socket con close(sockfd) para liberar los recursos.
 
+# Librerias
+
+Como se pudo haber notado al leer todo el readme explicativo de TCP y UDP, las funciones que se usarón mas relevantes fueron de la libreria <sys/socket.h>:
+
+### 1. socket()
+**Función:** Crea un endpoint de comunicación (socket) y devuelve un descriptor.  
+**Uso:** socket(AF_INET, SOCK_DGRAM, 0)  
+**Internamente:**  
+El kernel reserva una estructura de socket, crea colas de envío y recepción, y devuelve un identificador (file descriptor).  
+Es como abrir un “buzón” para recibir mensajes UDP.
+
+
+### 2. bind()
+**Función:** Asocia el socket con una dirección IP y un puerto local.  
+**Uso:** bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr))  
+**Internamente:**  
+El kernel vincula el puerto UDP (5926) al socket, de modo que los datagramas que lleguen a ese puerto se redirigen a este proceso.  
+Es como registrar el buzón en una dirección postal.
+
+
+### 3. recvfrom()
+**Función:** Recibe datagramas UDP desde la red.  
+**Uso:** recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &addr_len)  
+**Internamente:**  
+El proceso se bloquea hasta que llega un paquete UDP.  
+El kernel copia el contenido del datagrama del buffer del kernel al buffer de usuario y devuelve la dirección del remitente.  
+Actúa como “abrir una carta” del buzón.
+
+### 4. sendto()
+**Función:** Envía datagramas UDP a una dirección destino.  
+**Uso:** sendto(sockfd, message, strlen(message), 0, (struct sockaddr *)&dest, sizeof(dest))  
+**Internamente:**  
+El kernel toma los datos del buffer del usuario, les agrega las cabeceras IP y UDP, y los pasa a la pila de red para su envío.  
+UDP no garantiza entrega ni orden, simplemente lanza el paquete.
+
+### 5. htons() y inet_addr()
+**Función:**  
+- htons(): convierte números (como el puerto) del orden de bytes del host al orden de bytes de red (big-endian).  
+- inet_addr(): convierte una dirección IP en formato texto (ej. "127.0.0.1") a formato binario (usable por la red).
+
+**Qué pasa por debajo:**
+- Estas funciones no hacen llamadas al sistema: son utilidades de conversión.  
+- Preparan los valores para que el kernel pueda interpretarlos correctamente al enviar o recibir paquetes IP.
+
+
+### 6. close()
+**Función:** Cierra el socket y libera los recursos asociados.  
+**Uso:** close(sockfd)  
+**Internamente:**  
+El kernel destruye la estructura del socket, libera el puerto y descarta cualquier dato pendiente.
+
+
 # QUIC
 
 # Bibliografia:

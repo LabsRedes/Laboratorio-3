@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 
 //Definir el puerto donde está el broker y el tamaño del buffer s
 #define PORT 5927

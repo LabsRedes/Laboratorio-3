@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
+#include <sys/socket.h>
 
 
 //Número del puerto donde esta escuchando
